@@ -1,16 +1,26 @@
-const stripe = require('stripe')('sk_test_yourSecretKey');
+// payment.js
+const stripeLib = require('stripe');
+
+const stripe = stripeLib(process.env.STRIPE_SECRET_KEY || 'sk_test_YOUR_TEST_KEY');
 
 async function processPayment(amount, currency = 'usd', paymentMethod) {
-    // Deprecated method - needs to be updated
-    return await stripe.charges.create({
-        amount: amount,
-        currency: currency,
-        source: paymentMethod,
-        description: 'Order Payment'
-    });
+  if (!amount || !paymentMethod) {
+    throw new Error('Missing required parameter: amount and paymentMethod are required');
+  }
+
+  // Create a PaymentIntent and confirm it immediately
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: amount,
+    currency: currency,
+    payment_method: paymentMethod,
+    description: 'Order Payment',
+    confirm: true,
+  });
+
+  return paymentIntent;
 }
 
-// Example usage (don’t use real card details in testing)
-processPayment(5000, 'usd', 'pm_card_visa')
-    .then(res => console.log(res))
-    .catch(err => console.error(err));
+// export for testing
+module.exports = {
+  processPayment
+};
